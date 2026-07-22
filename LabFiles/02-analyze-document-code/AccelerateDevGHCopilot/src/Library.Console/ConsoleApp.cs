@@ -47,6 +47,14 @@ public class ConsoleApp
         }
     }
 
+    /// <summary>
+    /// Handles the patron search state. Prompts the user for a patron name,
+    /// searches the repository, and validates the results before proceeding.
+    /// </summary>
+    /// <returns>
+    /// ConsoleState.PatronSearch if no results found or too many results (>20);
+    /// ConsoleState.PatronSearchResults if valid results are found.
+    /// </returns>
     async Task<ConsoleState> PatronSearch()
     {
         string searchInput = ReadPatronName();

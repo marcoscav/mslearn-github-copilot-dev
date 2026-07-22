@@ -31,7 +31,7 @@ public class LoanService : ILoanService
             await _loanRepository.UpdateLoan(loan);
             return LoanReturnStatus.Success;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return LoanReturnStatus.Error;
         }
@@ -62,7 +62,7 @@ public class LoanService : ILoanService
             await _loanRepository.UpdateLoan(loan);
             return LoanExtensionStatus.Success;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return LoanExtensionStatus.Error;
         }

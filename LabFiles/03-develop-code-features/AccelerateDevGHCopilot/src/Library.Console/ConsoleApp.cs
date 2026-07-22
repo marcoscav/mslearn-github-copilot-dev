@@ -182,6 +182,8 @@ public class ConsoleApp
 
     async Task<ConsoleState> PatronDetails()
     {
+        if (selectedPatronDetails == null)
+            throw new InvalidOperationException("selectedPatronDetails is null.");
         Console.WriteLine($"Name: {selectedPatronDetails.Name}");
         Console.WriteLine($"Membership Expiration: {selectedPatronDetails.MembershipEnd}");
         Console.WriteLine();
@@ -231,6 +233,8 @@ public class ConsoleApp
 
     async Task<ConsoleState> LoanDetails()
     {
+        if (selectedPatronDetails == null)
+            throw new InvalidOperationException("selectedPatronDetails is null.");
         Console.WriteLine($"Book title: {selectedLoanDetails.BookItem!.Book!.Title}");
         Console.WriteLine($"Book Author: {selectedLoanDetails.BookItem!.Book!.Author!.Name}");
         Console.WriteLine($"Due date: {selectedLoanDetails.DueDate}");
@@ -257,7 +261,7 @@ public class ConsoleApp
             Console.WriteLine(EnumHelper.GetDescription(status));
             _currentState = ConsoleState.LoanDetails;
             // reload loan after returning
-            selectedLoanDetails = await _loanRepository.GetLoan(selectedLoanDetails.Id);
+            selectedLoanDetails = (await _loanRepository.GetLoan(selectedLoanDetails.Id))!;
             return ConsoleState.LoanDetails;
         }
         else if (action == CommonActions.Quit)
