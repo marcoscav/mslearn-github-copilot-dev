@@ -17,7 +17,7 @@ public class JsonPatronRepository : IPatronRepository
         await _jsonData.EnsureDataLoaded();
 
         List<Patron> searchResults = new List<Patron>();
-        foreach (Patron patron in _jsonData.Patrons)
+        foreach (Patron patron in _jsonData.Patrons!)
         {
             if (patron.Name.Contains(searchInput))
             {
@@ -50,7 +50,7 @@ public class JsonPatronRepository : IPatronRepository
     {
         await _jsonData.EnsureDataLoaded();
         var patrons = _jsonData.Patrons!;
-        Patron existingPatron = null;
+        Patron? existingPatron = null;
         foreach (var p in patrons)
         {
             if (p.Id == patron.Id)

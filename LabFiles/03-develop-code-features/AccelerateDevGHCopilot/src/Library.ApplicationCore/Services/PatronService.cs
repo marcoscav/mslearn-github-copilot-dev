@@ -29,7 +29,7 @@ public class PatronService : IPatronService
         try{
             await _patronRepository.UpdatePatron(patron);
             return MembershipRenewalStatus.Success;
-        } catch (Exception e) {
+        } catch (Exception) {
             return MembershipRenewalStatus.Error;
         }
     }
