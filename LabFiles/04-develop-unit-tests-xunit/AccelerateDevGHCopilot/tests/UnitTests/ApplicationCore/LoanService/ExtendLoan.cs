@@ -101,4 +101,70 @@ public class ExtendLoanTest
         Assert.Equal(LoanExtensionStatus.LoanExpired, extensionStatus);
         Assert.Equal(loanDueDate, loan.DueDate);
     }
+    [Fact(DisplayName = "LoanService.ExtendLoan: Returns LoanExpired when due date is exactly the current time")]
+    public async Task ExtendLoan_ReturnsLoanExpiredWhenDueDateIsExactlyNow()
+    {
+        // Arrange
+        var now = new DateTime(2026, 1, 1, 12, 0, 0);
+        var patron = PatronFactory.CreateCurrentPatron();
+        var loan = LoanFactory.CreateCurrentLoanForPatron(patron);
+        var loanId = loan.Id;
+        loan.DueDate = now;
+
+        var serviceWithFixedClock = new LoanService(_mockLoanRepository, () => now);
+        _mockLoanRepository.GetLoan(loanId).Returns(loan);
+
+        // Act
+        LoanExtensionStatus extensionStatus = await serviceWithFixedClock.ExtendLoan(loanId);
+
+        // Assert
+        Assert.Equal(LoanExtensionStatus.LoanExpired, extensionStatus);
+        Assert.Equal(now, loan.DueDate);
+    }
+
+    [Fact(DisplayName = "LoanService.ExtendLoan: Returns MembershipExpired when membership ends exactly at the current time")]
+    public async Task ExtendLoan_ReturnsMembershipExpiredWhenMembershipEndsExactlyNow()
+    {
+        // Arrange
+        var now = new DateTime(2026, 1, 1, 12, 0, 0);
+        var patron = PatronFactory.CreateCurrentPatron();
+        patron.MembershipEnd = now;
+        var loan = LoanFactory.CreateCurrentLoanForPatron(patron);
+        var loanId = loan.Id;
+        var loanDueDate = loan.DueDate;
+
+        var serviceWithFixedClock = new LoanService(_mockLoanRepository, () => now);
+        _mockLoanRepository.GetLoan(loanId).Returns(loan);
+
+        // Act
+        LoanExtensionStatus extensionStatus = await serviceWithFixedClock.ExtendLoan(loanId);
+
+        // Assert
+        Assert.Equal(LoanExtensionStatus.MembershipExpired, extensionStatus);
+        Assert.Equal(loanDueDate, loan.DueDate);
+    }
+
+    [Fact(DisplayName = "LoanService.ExtendLoan: Returns Error when UpdateLoan throws exception")]
+    public async Task ExtendLoan_ReturnsErrorWhenUpdateLoanThrowsException()
+    {
+        // Arrange
+        var patron = PatronFactory.CreateCurrentPatron();
+        var loan = LoanFactory.CreateCurrentLoanForPatron(patron);
+        var loanId = loan.Id;
+        var loanDueDate = loan.DueDate;
+
+        _mockLoanRepository.GetLoan(loanId).Returns(loan);
+
+        _mockLoanRepository
+            .When(x => x.UpdateLoan(loan))
+            .Do(_ => throw new Exception("Update failed"));
+
+        // Act
+        LoanExtensionStatus extensionStatus = await _loanService.ExtendLoan(loanId);
+
+        // Assert
+        Assert.Equal(LoanExtensionStatus.Error, extensionStatus);
+        Assert.Equal(loanDueDate.AddDays(LoanService.ExtendByDays), loan.DueDate);
+        await _mockLoanRepository.Received(1).UpdateLoan(loan);
+    }
 }
