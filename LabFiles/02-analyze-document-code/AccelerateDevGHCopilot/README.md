@@ -7,54 +7,54 @@ Library App is a .NET console-based library management application. It models co
 ## Project Structure
 
 - src
-	- Library.ApplicationCore
-		- Entities
-		- Enums
-		- Interfaces
-		- Services
-		- Library.ApplicationCore.csproj
-	- Library.Console
-		- Program.cs
-		- ConsoleApp.cs
-		- ConsoleState.cs
-		- CommonActions.cs
-		- appSettings.json
-		- Json
-		- Library.Console.csproj
-	- Library.Infrastructure
-		- Data
-		- Library.Infrastructure.csproj
+  - Library.ApplicationCore
+    - Entities
+    - Enums
+    - Interfaces
+    - Services
+    - Library.ApplicationCore.csproj
+  - Library.Console
+    - Program.cs
+    - ConsoleApp.cs
+    - ConsoleState.cs
+    - CommonActions.cs
+    - appSettings.json
+    - Json
+    - Library.Console.csproj
+  - Library.Infrastructure
+    - Data
+    - Library.Infrastructure.csproj
 - tests
-	- UnitTests
-		- ApplicationCore
-		- LoanFactory.cs
-		- PatronFactory.cs
-		- UnitTests.csproj
+  - UnitTests
+    - ApplicationCore
+    - LoanFactory.cs
+    - PatronFactory.cs
+    - UnitTests.csproj
 - README.md
 
 ## Key Classes and Interfaces
 
 - Entities
-	- Author, Book, BookItem, Loan, Patron
+  - Author, Book, BookItem, Loan, Patron
 - Application interfaces
-	- ILoanRepository, ILoanService, IPatronRepository, IPatronService
+  - ILoanRepository, ILoanService, IPatronRepository, IPatronService
 - Domain services
-	- LoanService, PatronService
+  - LoanService, PatronService
 - Console layer
-	- ConsoleApp
+  - ConsoleApp
 - Infrastructure data access
-	- JsonData, JsonLoanRepository, JsonPatronRepository
+  - JsonData, JsonLoanRepository, JsonPatronRepository
 
 ## Usage
 
 1. Prerequisites
-	 - .NET SDK installed (recommended current LTS).
+   Install the .NET SDK (recommended current LTS).
 2. Restore and build
-	 - dotnet build src/Library.Console/Library.Console.csproj
+  Command: `dotnet build src/Library.Console/Library.Console.csproj`
 3. Run the application
-	 - dotnet run --project src/Library.Console/Library.Console.csproj
+  Command: `dotnet run --project src/Library.Console/Library.Console.csproj`
 4. Run unit tests
-	 - dotnet test tests/UnitTests/UnitTests.csproj
+  Command: `dotnet test tests/UnitTests/UnitTests.csproj`
 
 ## License
 
