@@ -1,5 +1,6 @@
 using Library.ApplicationCore;
 using Library.ApplicationCore.Entities;
+using System.Linq;
 
 namespace Library.Infrastructure.Data;
 
@@ -16,15 +17,10 @@ public class JsonPatronRepository : IPatronRepository
     {
         await _jsonData.EnsureDataLoaded();
 
-        List<Patron> searchResults = new List<Patron>();
-        foreach (Patron patron in _jsonData.Patrons)
-        {
-            if (patron.Name.Contains(searchInput))
-            {
-                searchResults.Add(patron);
-            }
-        }
-        searchResults.Sort((p1, p2) => String.Compare(p1.Name, p2.Name));
+        List<Patron> searchResults = _jsonData.Patrons!
+            .Where(patron => patron.Name.Contains(searchInput))
+            .OrderBy(patron => patron.Name)
+            .ToList();
 
         searchResults = _jsonData.GetPopulatedPatrons(searchResults);
 
@@ -35,30 +31,19 @@ public class JsonPatronRepository : IPatronRepository
     {
         await _jsonData.EnsureDataLoaded();
 
-        foreach (Patron patron in _jsonData.Patrons!)
-        {
-            if (patron.Id == id)
-            {
-                Patron populated = _jsonData.GetPopulatedPatron(patron);
-                return populated;
-            }
-        }
-        return null;
+        Patron? patron = _jsonData.Patrons!
+            .FirstOrDefault(p => p.Id == id);
+
+        return patron == null ? null : _jsonData.GetPopulatedPatron(patron);
     }
 
     public async Task UpdatePatron(Patron patron)
     {
         await _jsonData.EnsureDataLoaded();
         var patrons = _jsonData.Patrons!;
-        Patron existingPatron = null;
-        foreach (var p in patrons)
-        {
-            if (p.Id == patron.Id)
-            {
-                existingPatron = p;
-                break;
-            }
-        }
+        Patron? existingPatron = patrons
+            .FirstOrDefault(p => p.Id == patron.Id);
+
         if (existingPatron != null)
         {
             existingPatron.Name = patron.Name;
