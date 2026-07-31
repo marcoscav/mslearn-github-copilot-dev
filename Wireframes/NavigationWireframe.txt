@@ -1,0 +1,24 @@
+Expanded Navigation:
+
+┌─────────────────────────┐
+│ Products                │
+│ Product Details         │
+│ Shopping Cart           │
+│ Checkout                │
+└─────────────────────────┘
+
+Collapsed Navigation (width < 300px):
+
+┌─────────┐
+│ P │ D │ │
+│ C │ Ch │
+└─────────┘
+
+Alternative compact collapsed version:
+
+┌─────┐
+│ P   │
+│ D   │
+│ C   │
+│ Ch  │
+└─────┘

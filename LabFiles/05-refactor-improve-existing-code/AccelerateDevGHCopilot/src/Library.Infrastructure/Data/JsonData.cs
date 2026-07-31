@@ -97,58 +97,33 @@ public class JsonData
 
     public Patron GetPopulatedPatron(Patron p)
     {
-        Patron populated = new Patron
+        return new Patron
         {
             Id = p.Id,
             Name = p.Name,
             ImageName = p.ImageName,
             MembershipStart = p.MembershipStart,
             MembershipEnd = p.MembershipEnd,
-            Loans = new List<Loan>()
+            Loans = Loans?
+                .Where(loan => loan.PatronId == p.Id)
+                .Select(GetPopulatedLoan)
+                .ToList() ?? new List<Loan>()
         };
-
-        foreach (Loan loan in Loans!)
-        {
-            if (loan.PatronId == p.Id)
-            {
-                populated.Loans.Add(GetPopulatedLoan(loan));
-            }
-        }
-
-        return populated;
     }
 
     public Loan GetPopulatedLoan(Loan l)
     {
-        Loan populated = new Loan
+        return new Loan
         {
             Id = l.Id,
             BookItemId = l.BookItemId,
             PatronId = l.PatronId,
             LoanDate = l.LoanDate,
             DueDate = l.DueDate,
-            ReturnDate = l.ReturnDate
+            ReturnDate = l.ReturnDate,
+            BookItem = GetPopulatedBookItem(BookItems!.Single(bi => bi.Id == l.BookItemId)),
+            Patron = Patrons!.Single(p => p.Id == l.PatronId)
         };
-
-        foreach (BookItem bi in BookItems!)
-        {
-            if (bi.Id == l.BookItemId)
-            {
-                populated.BookItem = GetPopulatedBookItem(bi);
-                break;
-            }
-        }
-
-        foreach (Patron p in Patrons!)
-        {
-            if (p.Id == l.PatronId)
-            {
-                populated.Patron = p;
-                break;
-            }
-        }
-
-        return populated;
     }
 
     public BookItem GetPopulatedBookItem(BookItem bi)
