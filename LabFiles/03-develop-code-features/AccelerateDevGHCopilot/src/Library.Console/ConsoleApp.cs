@@ -2,6 +2,7 @@
 using Library.ApplicationCore.Entities;
 using Library.ApplicationCore.Enums;
 using Library.Console;
+using Library.Infrastructure.Data;
 
 public class ConsoleApp
 {
@@ -16,13 +17,15 @@ public class ConsoleApp
     ILoanRepository _loanRepository;
     ILoanService _loanService;
     IPatronService _patronService;
+    JsonData _jsonData;
 
-    public ConsoleApp(ILoanService loanService, IPatronService patronService, IPatronRepository patronRepository, ILoanRepository loanRepository)
+    public ConsoleApp(ILoanService loanService, IPatronService patronService, IPatronRepository patronRepository, ILoanRepository loanRepository, JsonData jsonData)
     {
         _patronRepository = patronRepository;
         _loanRepository = loanRepository;
         _loanService = loanService;
         _patronService = patronService;
+        _jsonData = jsonData;
     }
 
     public async Task Run()
@@ -94,7 +97,7 @@ public class ConsoleApp
 
     async Task<ConsoleState> PatronSearchResults()
     {
-        CommonActions options = CommonActions.Select | CommonActions.SearchPatrons | CommonActions.Quit;
+        CommonActions options = CommonActions.Select | CommonActions.SearchPatrons | CommonActions.SearchBooks | CommonActions.Quit;
         CommonActions action = ReadInputOptions(options, out int selectedPatronNumber);
         if (action == CommonActions.Select)
         {
@@ -110,6 +113,10 @@ public class ConsoleApp
                 return ConsoleState.PatronSearchResults;
             }
         }
+        else if (action == CommonActions.SearchBooks)
+        {
+            return ConsoleState.PatronSearchResults;
+        }
         else if (action == CommonActions.Quit)
         {
             return ConsoleState.Quit;
@@ -124,6 +131,7 @@ public class ConsoleApp
 
     static CommonActions ReadInputOptions(CommonActions options, out int optionNumber)
     {
+
         CommonActions action;
         optionNumber = 0;
         do
@@ -136,6 +144,7 @@ public class ConsoleApp
             {
                 "q" when options.HasFlag(CommonActions.Quit) => CommonActions.Quit,
                 "s" when options.HasFlag(CommonActions.SearchPatrons) => CommonActions.SearchPatrons,
+                "b" when options.HasFlag(CommonActions.SearchBooks) => CommonActions.SearchBooks,
                 "m" when options.HasFlag(CommonActions.RenewPatronMembership) => CommonActions.RenewPatronMembership,
                 "e" when options.HasFlag(CommonActions.ExtendLoanedBook) => CommonActions.ExtendLoanedBook,
                 "r" when options.HasFlag(CommonActions.ReturnLoanedBook) => CommonActions.ReturnLoanedBook,
@@ -153,6 +162,7 @@ public class ConsoleApp
 
     static void WriteInputOptions(CommonActions options)
     {
+
         Console.WriteLine("Input Options:");
         if (options.HasFlag(CommonActions.ReturnLoanedBook))
         {
@@ -169,6 +179,10 @@ public class ConsoleApp
         if (options.HasFlag(CommonActions.SearchPatrons))
         {
             Console.WriteLine(" - \"s\" for new search");
+        }
+        if (options.HasFlag(CommonActions.SearchBooks))
+        {
+            Console.WriteLine(" - \"b\" to check for book availability");
         }
         if (options.HasFlag(CommonActions.Quit))
         {
@@ -193,7 +207,7 @@ public class ConsoleApp
             loanNumber++;
         }
 
-        CommonActions options = CommonActions.SearchPatrons | CommonActions.Quit | CommonActions.Select | CommonActions.RenewPatronMembership;
+        CommonActions options = CommonActions.SearchPatrons | CommonActions.Quit | CommonActions.Select | CommonActions.RenewPatronMembership | CommonActions.SearchBooks;
         CommonActions action = ReadInputOptions(options, out int selectedLoanNumber);
         if (action == CommonActions.Select)
         {
@@ -225,8 +239,65 @@ public class ConsoleApp
             selectedPatronDetails = (await _patronRepository.GetPatron(selectedPatronDetails.Id))!;
             return ConsoleState.PatronDetails;
         }
+        else if (action == CommonActions.SearchBooks)
+        {
+            return await SearchBooks();
+        }
 
         throw new InvalidOperationException("An input option is not handled.");
+    }
+
+    async Task<ConsoleState> SearchBooks()
+    {
+        // Ensure data is loaded
+        await _jsonData.EnsureDataLoaded();
+        
+        string? bookTitle = null;
+        while (String.IsNullOrWhiteSpace(bookTitle))
+        {
+            Console.Write("Enter a book title to search for: ");
+            bookTitle = Console.ReadLine();
+        }
+        
+        // Use FirstOrDefault to find a book in Books.json (case-insensitive)
+        Book? foundBook = _jsonData.Books?.FirstOrDefault(b => 
+            b.Title.Contains(bookTitle, StringComparison.OrdinalIgnoreCase));
+        
+        if (foundBook == null)
+        {
+            Console.WriteLine($"No book found with title: {bookTitle}");
+            return ConsoleState.PatronDetails;
+        }
+        
+        // Retrieve the corresponding BookItem using the BookId from BookItems.json
+        var bookItems = _jsonData.BookItems?.Where(bi => bi.BookId == foundBook.Id).ToList();
+        
+        // Check Loans.json for an active loan (loan.ReturnDate == null) for the BookItem
+        Loan? activeLoan = null;
+        if (bookItems != null && bookItems.Count > 0)
+        {
+            foreach (var bookItem in bookItems)
+            {
+                activeLoan = _jsonData.Loans?.FirstOrDefault(l => 
+                    l.BookItemId == bookItem.Id && l.ReturnDate == null);
+                if (activeLoan != null)
+                {
+                    break;
+                }
+            }
+        }
+        
+        // Display whether the book is available for loan or currently on loan with the due date
+        if (activeLoan == null)
+        {
+            Console.WriteLine($"\"{foundBook.Title}\" is available for loan");
+        }
+        else
+        {
+            Console.WriteLine($"\"{foundBook.Title}\" is on loan to another patron. The return due date is {activeLoan.DueDate}");
+        }
+        
+        return ConsoleState.PatronDetails;
     }
 
     async Task<ConsoleState> LoanDetails()
