@@ -10,6 +10,7 @@ var configuration = new ConfigurationBuilder()
 .AddJsonFile("appSettings.json")
 .Build();
 
+
 services.AddSingleton<IConfiguration>(configuration);
 
 services.AddScoped<IPatronRepository, JsonPatronRepository>();
