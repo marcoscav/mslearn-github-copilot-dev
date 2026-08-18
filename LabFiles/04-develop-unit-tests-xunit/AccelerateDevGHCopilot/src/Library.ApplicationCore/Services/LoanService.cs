@@ -4,11 +4,18 @@ using Library.ApplicationCore.Enums;
 
 public class LoanService : ILoanService
 {
-    private ILoanRepository _loanRepository;
+    private readonly ILoanRepository _loanRepository;
+    private readonly Func<DateTime> _nowProvider;
 
     public LoanService(ILoanRepository loanRepository)
+        : this(loanRepository, () => DateTime.Now)
+    {
+    }
+
+    public LoanService(ILoanRepository loanRepository, Func<DateTime> nowProvider)
     {
         _loanRepository = loanRepository;
+        _nowProvider = nowProvider;
     }
 
     public async Task<LoanReturnStatus> ReturnLoan(int loanId)
@@ -46,14 +53,16 @@ public class LoanService : ILoanService
         if (loan == null)
             return LoanExtensionStatus.LoanNotFound;
 
+        var now = _nowProvider();
+
         // Check if patron's membership is expired
-        if (loan.Patron!.MembershipEnd < DateTime.Now)
+        if (loan.Patron!.MembershipEnd <= now)
             return LoanExtensionStatus.MembershipExpired;
 
         if (loan.ReturnDate != null)
             return LoanExtensionStatus.LoanReturned;
 
-        if (loan.DueDate < DateTime.Now)
+        if (loan.DueDate <= now)
             return LoanExtensionStatus.LoanExpired;
 
         loan.DueDate = loan.DueDate.AddDays(ExtendByDays);
