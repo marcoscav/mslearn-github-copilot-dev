@@ -139,6 +139,7 @@ public class ConsoleApp
                 "m" when options.HasFlag(CommonActions.RenewPatronMembership) => CommonActions.RenewPatronMembership,
                 "e" when options.HasFlag(CommonActions.ExtendLoanedBook) => CommonActions.ExtendLoanedBook,
                 "r" when options.HasFlag(CommonActions.ReturnLoanedBook) => CommonActions.ReturnLoanedBook,
+                "b" when options.HasFlag(CommonActions.SearchBooks) => CommonActions.SearchBooks,
                 _ when int.TryParse(userInput, out optionNumber) => CommonActions.Select,
                 _ => CommonActions.Repeat
             };
@@ -178,6 +179,10 @@ public class ConsoleApp
         {
             Console.WriteLine("Or type a number to select a list item.");
         }
+        if (options.HasFlag(CommonActions.SearchBooks))
+        {
+            Console.WriteLine(" - \"b\" to search for books");
+        }
     }
 
     async Task<ConsoleState> PatronDetails()
@@ -193,7 +198,7 @@ public class ConsoleApp
             loanNumber++;
         }
 
-        CommonActions options = CommonActions.SearchPatrons | CommonActions.Quit | CommonActions.Select | CommonActions.RenewPatronMembership;
+        CommonActions options = CommonActions.SearchPatrons | CommonActions.Quit | CommonActions.Select | CommonActions.RenewPatronMembership | CommonActions.SearchBooks;
         CommonActions action = ReadInputOptions(options, out int selectedLoanNumber);
         if (action == CommonActions.Select)
         {
@@ -225,8 +230,45 @@ public class ConsoleApp
             selectedPatronDetails = (await _patronRepository.GetPatron(selectedPatronDetails.Id))!;
             return ConsoleState.PatronDetails;
         }
+        else if (action == CommonActions.SearchBooks)
+        {
+            return await SearchBooks();
+        }
 
         throw new InvalidOperationException("An input option is not handled.");
+    }
+
+    async Task<ConsoleState> SearchBooks()
+    {
+        string searchInput = ReadBookTitle();
+        List<Patron> patrons = await _patronRepository.SearchPatrons(string.Empty);
+        Loan? loan = patrons
+            .SelectMany(patron => patron.Loans)
+            .FirstOrDefault(loan =>
+                loan.ReturnDate == null &&
+                string.Equals(loan.BookItem?.Book?.Title, searchInput, StringComparison.OrdinalIgnoreCase));
+
+        if (loan == null)
+        {
+            Console.WriteLine($"{searchInput} is available for loan");
+        }
+        else
+        {
+            Console.WriteLine($"{loan.BookItem!.Book!.Title} is on loan to another patron. The return due date is {loan.DueDate}.");
+        }
+
+        return ConsoleState.PatronDetails;
+    }
+
+    static string ReadBookTitle()
+    {
+        string? searchInput = null;
+        while (String.IsNullOrWhiteSpace(searchInput))
+        {
+            Console.Write("Enter a book title to search for: ");
+            searchInput = Console.ReadLine();
+        }
+        return searchInput;
     }
 
     async Task<ConsoleState> LoanDetails()
